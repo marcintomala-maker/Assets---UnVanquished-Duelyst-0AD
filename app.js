@@ -212,7 +212,7 @@
         .then(buf => { const img = ext === 'dds' ? decodeDDS(buf) : decodeTGA(buf); return toCanvas(img); }));
     }
     return limited(() => new Promise((res, rej) => {
-      const im = new Image(); im.decoding = 'async'; im.loading = 'lazy';
+      const im = new Image(); im.decoding = 'async'; // not loading=lazy: a detached lazy image never loads
       im.onload = () => res(im); im.onerror = rej; im.src = url;
     }));
   }
