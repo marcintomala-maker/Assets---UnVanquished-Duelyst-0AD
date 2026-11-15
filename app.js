@@ -92,6 +92,7 @@
     // Problem items first? No – keep folder order, but put items with a preview first so the page looks alive.
     state.list.sort((a, b) => (b.hasPrev - a.hasPrev) || (a.i - b.i));
     state.shown = 0;
+    queue.length = 0; // drop thumbnail loads for cards that are gone
     $('grid').innerHTML = '';
     const n = state.list.length;
     const bad = state.list.filter(it => it.verdict === 'nosell' || it.verdict === 'check').length;
@@ -118,10 +119,6 @@
   const gameName = (it) => it.game === '0ad' ? '0 A.D.' : 'Unvanquished';
 
   // ---------------------------------------------------------------- cards
-  const lazy = new IntersectionObserver((es) => {
-    for (const e of es) if (e.isIntersecting) { lazy.unobserve(e.target); fillThumb(e.target, e.target._it); }
-  }, { rootMargin: '300px' });
-
   function card(it) {
     const d = document.createElement('div');
     d.className = 'card' + (it.verdict === 'nosell' ? ' bad-nosell' : it.verdict === 'check' ? ' bad-check' : '');
@@ -140,7 +137,8 @@
     d.appendChild(info);
     d.onclick = (ev) => { if (ev.target.closest('.play')) return; openDetail(it); };
     d.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openDetail(it); } };
-    lazy.observe(t);
+    // Fill right away (loads are queued, 6 at a time). Only 60 cards are added per page.
+    fillThumb(t, it);
     return d;
   }
   function shortDir(it) {
