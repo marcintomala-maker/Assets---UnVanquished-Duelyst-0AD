@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Game Art Finder – 0 A.D. + Unvanquished</title>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root {
+    --bg: #f4f1ea; --card: #fff; --ink: #1d1d1f; --muted: #6b6b70; --line: #ddd8cc;
+    --green: #1f8a4c; --green-bg: #e3f5ea;
+    --lime: #4c8a1f; --lime-bg: #eef6e0;
+    --yellow: #9a6a00; --yellow-bg: #fff3d1;
+    --red: #c62828; --red-bg: #fde4e4;
+    --orange: #c45a00; --orange-bg: #ffe9d6;
+    --blue: #1d5fd1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 18px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 28px 24px 8px; max-width: 1400px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 34px; }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 19px; }
+  main { max-width: 1400px; margin: 0 auto; padding: 0 24px 80px; }
+
+  .panel { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 18px 20px; margin: 16px 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0; }
+  .row > .label { font-weight: 700; min-width: 120px; font-size: 19px; }
+  .pill { font: inherit; font-size: 18px; padding: 12px 18px; border-radius: 999px; border: 2px solid var(--line); background: #fff; cursor: pointer; min-height: 52px; }
+  .pill:hover { border-color: #999; }
+  .pill.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .search { flex: 1; min-width: 260px; font: inherit; font-size: 20px; padding: 14px 18px; border-radius: 14px; border: 2px solid var(--line); min-height: 56px; }
+  .search:focus { outline: 3px solid #9ec1ff; border-color: var(--blue); }
+  .checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 8px 18px; }
+  .check { display: flex; gap: 12px; align-items: center; font-size: 18px; padding: 10px 12px; border-radius: 12px; cursor: pointer; user-select: none; }
+  .check:hover { background: #f6f4ef; }
+  .check input { width: 28px; height: 28px; accent-color: var(--ink); flex: none; cursor: pointer; }
+  .dot { display: inline-block; width: 18px; height: 18px; border-radius: 50%; flex: none; }
+
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+  .legend div { padding: 12px 14px; border-radius: 12px; font-size: 17px; }
+  .legend b { display: block; font-size: 18px; }
+
+  .count { font-size: 22px; font-weight: 700; margin: 18px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 3px solid var(--line); border-radius: 16px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform .08s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+  .card:focus-visible { outline: 4px solid var(--blue); }
+  .thumb { height: 190px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#eee 0 25%, #fafafa 0 50%) 0 0/20px 20px; position: relative; }
+  .thumb img, .thumb canvas { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: auto; }
+  .big-icon { font-size: 64px; }
+  .thumb .fontsample { font-size: 44px; padding: 8px; text-align: center; background: #fff; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .nopreview { color: var(--muted); font-size: 16px; text-align: center; padding: 12px; background: #fff; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .play { font-size: 22px; padding: 14px 22px; border-radius: 999px; border: none; background: var(--ink); color: #fff; cursor: pointer; }
+  .card .info { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .card .name { font-weight: 700; font-size: 17px; word-break: break-word; }
+  .card .where { color: var(--muted); font-size: 14px; word-break: break-word; }
+  .badge { display: inline-block; font-size: 15px; font-weight: 700; padding: 6px 10px; border-radius: 10px; }
+  .v-free   { background: var(--green-bg); color: var(--green); }
+  .v-credit { background: var(--lime-bg); color: var(--lime); }
+  .v-share  { background: var(--yellow-bg); color: var(--yellow); }
+  .v-nosell { background: var(--red-bg); color: var(--red); }
+  .v-check  { background: var(--orange-bg); color: var(--orange); }
+  .card.bad-nosell { border: 5px solid var(--red); background: var(--red-bg); }
+  .card.bad-check { border: 5px solid var(--orange); background: var(--orange-bg); }
+  .card.bad-nosell .thumb::after, .card.bad-check .thumb::after { content: "⛔ CAN'T SELL"; position: absolute; top: 0; left: 0; right: 0; text-align: center; background: var(--red); color: #fff; font-weight: 800; font-size: 16px; padding: 6px 8px; letter-spacing: .5px; }
+  .card.bad-check .thumb::after { content: "❓ NOT SURE – ASK FIRST"; background: var(--orange); }
+  .card.bad-nosell .thumb img, .card.bad-nosell .thumb canvas, .card.bad-check .thumb img, .card.bad-check .thumb canvas { opacity: .55; }
+  .big-check { background: var(--red-bg); border: 2px solid var(--red); }
+  .big-check:hover { background: #fbd3d3; }
+  .check .small { font-size: 15px; }
+
+  .more { display: block; margin: 24px auto; font-size: 20px; padding: 16px 28px; }
+  .empty { text-align: center; font-size: 22px; padding: 50px 10px; color: var(--muted); }
+
+  /* detail */
+  dialog { border: none; border-radius: 20px; padding: 0; width: min(1100px, 96vw); max-height: 94vh; }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
+  .dlg { display: grid; grid-template-columns: 1.3fr 1fr; min-height: 520px; }
+  @media (max-width: 860px) { .dlg { grid-template-columns: 1fr; } }
+  .stage { background: repeating-conic-gradient(#e9e9e9 0 25%, #f8f8f8 0 50%) 0 0/24px 24px; display: flex; align-items: center; justify-content: center; min-height: 420px; position: relative; }
+  .stage img, .stage canvas.pic { max-width: 100%; max-height: 80vh; object-fit: contain; }
+  .stage .three { width: 100%; height: 100%; min-height: 460px; }
+  .stage audio { width: 90%; }
+  .stage .hint { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; color: #555; font-size: 15px; }
+  .side { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; overflow: auto; max-height: 94vh; }
+  .side h2 { margin: 0; font-size: 26px; word-break: break-word; }
+  .verdict { border-radius: 14px; padding: 14px 16px; font-size: 18px; }
+  .verdict b { display: block; font-size: 22px; margin-bottom: 4px; }
+  .verdict ul { margin: 6px 0 0; padding-left: 22px; }
+  .btn { font: inherit; font-size: 19px; padding: 14px 18px; border-radius: 14px; border: 2px solid var(--ink); background: #fff; cursor: pointer; text-align: center; text-decoration: none; color: var(--ink); display: block; }
+  .btn.primary { background: var(--ink); color: #fff; }
+  .btn:hover { filter: brightness(.95); }
+  .small { font-size: 15px; color: var(--muted); word-break: break-word; }
+  .close { position: absolute; top: 12px; right: 12px; z-index: 5; font-size: 22px; width: 52px; height: 52px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 14px 22px; border-radius: 12px; font-size: 18px; display: none; z-index: 99; }
+  details.help summary { cursor: pointer; font-weight: 700; font-size: 20px; }
+  details.help p, details.help li { font-size: 17px; }
+  footer { color: var(--muted); font-size: 15px; max-width: 1400px; margin: 0 auto; padding: 0 24px 40px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎨 Free Game Art Finder</h1>
+  <p>Pictures, sounds, music and 3D models from the free games <b>0 A.D.</b> and <b>Unvanquished</b>. Every item shows if you can use it.</p>
+</header>
+
+<main>
+  <section class="panel" aria-label="Filters">
+    <div class="row"><span class="label">Game</span><span id="games"></span></div>
+    <div class="row"><span class="label">Show me</span><span id="types"></span></div>
+    <div class="row"><span class="label">Search</span>
+      <input id="q" class="search" type="search" placeholder="Type a word, like: horse, sword, door, wall, explosion…" autocomplete="off">
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Hide options">
+    <div class="row"><span class="label">Tick what fits you</span></div>
+    <div class="checks">
+      <label class="check big-check"><input type="checkbox" id="hideBad"><span class="dot" style="background:var(--red)"></span><span><b>Hide things I can't use</b><br><span class="small">Hides all red ⛔ and orange ❓ items</span></span></label>
+      <label class="check"><input type="checkbox" id="hideNoSell"><span class="dot" style="background:var(--red)"></span><span>💰 I want to sell my game<br><span class="small">Hides ⛔ “can't sell” items</span></span></label>
+      <label class="check"><input type="checkbox" id="hideCheck"><span class="dot" style="background:var(--orange)"></span><span>🛡️ I only want safe, clear rules<br><span class="small">Hides ❓ “not sure” items</span></span></label>
+      <label class="check"><input type="checkbox" id="hideShare"><span class="dot" style="background:var(--yellow)"></span><span>🔒 I don't want to share my changed files<br><span class="small">Hides 🟡 “give credit + share” items</span></span></label>
+      <label class="check"><input type="checkbox" id="hideCredit"><span class="dot" style="background:var(--lime)"></span><span>✍️ I don't want to write any credits<br><span class="small">Shows only ✅ “free” items</span></span></label>
+      <label class="check"><input type="checkbox" id="hideLayers" checked><span class="dot" style="background:#999"></span><span>🧩 Hide extra texture layers<br><span class="small">Bump, shine and glow maps</span></span></label>
+      <label class="check"><input type="checkbox" id="onlyPreview"><span class="dot" style="background:#999"></span><span>👀 Only show things with a preview</span></label>
+    </div>
+    <div class="row" style="margin-top:6px"><button class="pill" id="resetChecks">↺ Untick all</button></div>
+  </section>
+
+  <details class="panel help">
+    <summary>What do the colors mean? (click)</summary>
+    <div class="legend" style="margin-top:12px">
+      <div class="v-free"><b>✅ Free</b>Use it any way you like. Nothing to do.</div>
+      <div class="v-credit"><b>✅ Give credit</b>You can use and sell it. Write the author's name in your credits.</div>
+      <div class="v-share"><b>🟡 Give credit + share</b>You can use and sell it. Write the author's name. If you change this file, share your changed file under the same rules.</div>
+      <div class="v-nosell"><b>⛔ Can't sell</b>Only for free projects. Do not use in anything you sell.</div>
+      <div class="v-check"><b>❓ Not sure</b>Nobody wrote down the rules. Don't use it until you ask the author.</div>
+    </div>
+    <p><b>Tip:</b> Click any item, then press <b>“Copy credit text”</b>. Paste that into a “Credits” file in your project. That's usually all you need.</p>
+    <p class="small">This is a helper, not legal advice. Rules were read from each project's own license files (Nov 2026).</p>
+  </details>
+
+  <div class="count" id="count">Loading…</div>
+  <div class="grid" id="grid"></div>
+  <button class="pill more" id="more" hidden>Show more</button>
+  <div class="empty" id="empty" hidden>Nothing found. Try another word, or untick some “Hide” boxes.</div>
+</main>
+
+<footer>
+  <p>📄 <a href="assets-and-licenses.csv">Download the full list as a spreadsheet (CSV)</a> · 📖 <a href="LICENSES.md">Full license notes</a></p>
+  <p>0 A.D. © Wildfire Games – <a href="https://play0ad.com">play0ad.com</a>. Unvanquished © Unvanquished team and artists – <a href="https://unvanquished.net">unvanquished.net</a>. Files load straight from their public code pages; nothing is copied here.</p>
+</footer>
+
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast"></div>
+
+<script src="catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
