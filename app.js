@@ -79,7 +79,7 @@
     if ($('hideNoSell').checked && v === 'nosell') return false;
     if ($('hideCheck').checked && v === 'check') return false;
     if ($('hideShare').checked && v === 'share') return false;
-    if ($('hideCredit').checked && (v === 'credit' || v === 'share')) return false;
+    if ($('hideCredit').checked && v !== 'free') return false;
     if ($('hideLayers').checked && it.layer && it.type === 'pic') return false;
     if ($('onlyPreview').checked && !it.hasPrev) return false;
     if (state.q) { for (const w of state.q) if (!it.hay.includes(w)) return false; }
